@@ -1,4 +1,3 @@
-from numpy import insert
 import sqlalchemy as alch
 from sqlalchemy.ext.declarative import declarative_base
 import requests
@@ -88,11 +87,13 @@ if DB_CON.upper() == ".CSV":
                 DictWriter(write_file, fieldnames=fields).writerow(row)
 
 else:
+    
     DB_DECBASE = declarative_base()
     DB_ENGINE = alch.create_engine(DB_CON)
     DB_SESSION = alch.orm.sessionmaker(bind = DB_ENGINE)
     DB_MSESSION = DB_SESSION()
 
+    
     DB_METADATA = alch.MetaData()
     current_table = alch.Table(
         TABLE_NAME, DB_METADATA,
@@ -107,7 +108,7 @@ else:
     )
 
     DB_METADATA.create_all(DB_ENGINE, checkfirst = True)
-
+    
     """
     class prices_table(DB_DECBASE):
         __tablename__ = TABLE_NAME
@@ -125,24 +126,21 @@ else:
     """
 
     def write_results_db(results):
-        for row in results:
-            DB_CON.execute(
-                current_table.insert().values(
-                  row
-                )
-            )
-            """
-            trow_line = current_table(
-                Date = row["Date"],
-                Currency = row["Currency"],
-                Price = row["Price"],
-                Name = row["Name"],
-                Store = row["Store"],
-                Url = row["Url"]
-            )
-            DB_MSESSION.add(trow_line)
-            DB_MSESSION.commit()
-            """
+        DB_ENGINE.connect().execute(
+            current_table.insert(), results
+        )
+        """
+        trow_line = current_table(
+            Date = row["Date"],
+            Currency = row["Currency"],
+            Price = row["Price"],
+            Name = row["Name"],
+            Store = row["Store"],
+            Url = row["Url"]
+        )
+        DB_MSESSION.add(trow_line)
+        DB_MSESSION.commit()
+        """
 
 # COLLECT DATA
 
@@ -206,10 +204,22 @@ for result in soup_grid:
     Url = f"https://www.google.com{result.find('a', {'class' : 'xCpuod'})['href']}"
 
     try:
-        current_result = {"Date":Date, "Currency":Price[0], "Price":Price[1], "Name":Name, "Store":Store, "Url":Url}
+        current_result = {
+            "Date":Date, 
+            "Currency":Price[0], 
+            "Price":float( Price[1].replace(".", "").replace(",", ".") ), 
+            "Name":Name, 
+            "Store":Store, 
+            "Url":Url}
         output_data.append(current_result)
     except IndexError:
-        current_result = {"Date":Date, "Currency":None, "Price":Price[0], "Name":Name, "Store":Store, "Url":Url}
+        current_result = {
+            "Date":Date, 
+            "Currency":None, 
+            "Price":float( Price[0].replace(".", "").replace(",", ".") ), 
+            "Name":Name, 
+            "Store":Store, 
+            "Url":Url}
         output_data.append(current_result)
     except Exception as collect_error:
         write_message_log(collect_error, "Unexpected error collecting inline results:")
@@ -224,10 +234,22 @@ for result in soup_inline:
     Url = f"https://google.com{result['href']}"
 
     try:
-        current_result = {"Date":Date, "Currency":Price[0], "Price":Price[1], "Name":Name, "Store":Store, "Url":Url}
+        current_result = {
+            "Date":Date, 
+            "Currency":Price[0], 
+            "Price":float( Price[1].replace(".", "").replace(",", ".") ), 
+            "Name":Name, 
+            "Store":Store, 
+            "Url":Url}
         output_data.append(current_result)
     except IndexError:
-        current_result = {"Date":Date, "Currency":None, "Price":Price[0], "Name":Name, "Store":Store, "Url":Url}
+        current_result = {
+            "Date":Date, 
+            "Currency":None, 
+            "Price":float( Price[0].replace(".", "").replace(",", ".") ), 
+            "Name":Name, 
+            "Store":Store, 
+            "Url":Url}
         output_data.append(current_result)
     except Exception as collect_error:
         write_message_log(collect_error, "Unexpected error collecting inline results:")
