@@ -1,4 +1,6 @@
+from numpy import insert
 import sqlalchemy as alch
+from sqlalchemy.ext.declarative import declarative_base
 import requests
 import re
 #import json
@@ -86,11 +88,27 @@ if DB_CON.upper() == ".CSV":
                 DictWriter(write_file, fieldnames=fields).writerow(row)
 
 else:
-    DB_DECBASE = alch.declarative_base()
+    DB_DECBASE = declarative_base()
     DB_ENGINE = alch.create_engine(DB_CON)
-    DB_SESSION = alch.sessionmaker(bind = DB_ENGINE)
+    DB_SESSION = alch.orm.sessionmaker(bind = DB_ENGINE)
     DB_MSESSION = DB_SESSION()
 
+    DB_METADATA = alch.MetaData()
+    current_table = alch.Table(
+        TABLE_NAME, DB_METADATA,
+        
+        alch.Column("Id", alch.Integer, primary_key = True),
+        alch.Column("Date", alch.Date),
+        alch.Column("Currency", alch.String),
+        alch.Column("Price", alch.Float),
+        alch.Column("Name", alch.String),
+        alch.Column("Store", alch.String),
+        alch.Column("Url", alch.String)
+    )
+
+    DB_METADATA.create_all(DB_ENGINE, checkfirst = True)
+
+    """
     class prices_table(DB_DECBASE):
         __tablename__ = TABLE_NAME
         Id = alch.Column(alch.Integer, primary_key = True)
@@ -104,10 +122,17 @@ else:
         def __repr__(self):
             return "<entry(Date={}, Currency={}, Price={}, Name={}, Store={}, Url={})>".format(
             self.Date, self.Currency, self.Price, self.Name, self.Store, self.Url)
-    
+    """
+
     def write_results_db(results):
         for row in results:
-            trow_line = prices_table(
+            DB_CON.execute(
+                current_table.insert().values(
+                  row
+                )
+            )
+            """
+            trow_line = current_table(
                 Date = row["Date"],
                 Currency = row["Currency"],
                 Price = row["Price"],
@@ -117,7 +142,8 @@ else:
             )
             DB_MSESSION.add(trow_line)
             DB_MSESSION.commit()
-    
+            """
+
 # COLLECT DATA
 
 SEARCH_HEADERS = {
