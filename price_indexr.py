@@ -17,17 +17,17 @@ def filtered_by_name(name_to_filter: str, pos_filters: list, neg_filters: list) 
     with every test passed, return 'True'.
     """
     checks_up = False
-    for word in pos_filters:
-        if bool( re.search(word.lower(), name_to_filter.lower()) ): checks_up = True
-        else: checks_up = False
-        if not checks_up: break
-    
-    if len(neg_filters) > 0 and checks_up:
+    if len(neg_filters) > 0:
         for word in neg_filters:
             if not bool( re.search(word.lower(), name_to_filter.lower()) ): checks_up = True
             else: checks_up = False
             if not checks_up: break
-    
+
+    for word in pos_filters and checks_up:
+        if bool( re.search(word.lower(), name_to_filter.lower()) ): checks_up = True
+        else: checks_up = False
+        if not checks_up: break
+
     return checks_up
 
 def write_message_log(error, message: str):
@@ -59,12 +59,12 @@ if len(argv) >= 4:
 # SORT FILTERS
 try:
     # raise error if doesn't start with a positive filter
-    if bool(re.match("-", SEARCH_FIELD)): raise TypeError
+    if bool(re.match("-", SEARCH_FIELD)): raise ValueError
 
     SEARCH_KEYWORDS = {}
     SEARCH_KEYWORDS["negative"] = re.split(" -", SEARCH_FIELD)[1:]
     SEARCH_KEYWORDS["positive"] = re.split(" ", re.split(" -", SEARCH_FIELD)[0])
-except TypeError as input_error:
+except ValueError as input_error:
     write_message_log(
         input_error, 
         "Your search should start with at least one positive filter and end with negative filters, if any"
